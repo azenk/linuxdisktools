@@ -1,12 +1,12 @@
 __author__ = 'azenk'
 
-import base
+from base import Controller,Drive,Enclosure
 import subprocess
 from distutils.spawn import find_executable
 import os.path,os,sys
 import re
 
-class MegaCLIError:
+class MegaCLIResponse:
 
 	normal_codes = [0x00]
 	warning_codes = []
@@ -104,13 +104,15 @@ class MegaCLIError:
 
 	_exit_code = None
 
-	def __init__(self,exit_code=-1):
+	def __init__(self,output,exit_code=-1):
 			if isinstance(exit_code,int):
 				self._exit_code = exit_code
 			elif isinstance(exit_code,str):
 				self._exit_code = int(exit_code,16)
 			else:
 				raise Exception("Invalid Error Code Specified")
+			
+			self._output = output
 
 	def get_error_string(self):
 		try:
@@ -130,11 +132,115 @@ class MegaCLIError:
 	def is_normal(self):
 		return self._exit_code in self.normal_codes
 
-class LsiController(base.Controller):
+	def __iter__(self):
+		tof = re.compile('^\r.*$\n',re.MULTILINE)
+		blank_lines = re.compile('^\n+',re.MULTILINE)
+		section_header = re.compile('^(.+)$\n *=+ *$\n',re.MULTILINE)
+		key_val = re.compile('^([^:\n]+):(.*)$\n',re.MULTILINE)
+		#key_val = re.compile('^([^:\n]+):(.*)\n(?!(^[^:\n]+:|\n))',re.MULTILINE)
+		text = re.compile('^(.*)$\n',re.MULTILINE)
+
+		offset = 0
+		while offset < len(self._output)-1:
+			tf = re.match(tof,self._output[offset:-1])
+			if tf is not None:
+				offset += len(tf.group(0))
+				continue
+
+			blanks = re.match(blank_lines,self._output[offset:-1])
+			if blanks is not None:
+				offset += len(blanks.group(0))
+				continue
+
+			sh = re.match(section_header,self._output[offset:-1])
+			if sh is not None:
+				offset += len(sh.group(0))
+				yield ("Section Header", sh.group(1).strip())
+				continue
+
+			kv = re.match(key_val,self._output[offset:-1])
+			if kv is not None:
+				k = kv.group(1).strip()
+				v = kv.group(2).strip()
+				offset += len(kv.group(0))
+				yield (k,v)
+				continue
+
+			t = re.match(text,self._output[offset:-1])
+			if t is not None:
+				offset += len(t.group(0))
+				yield ("Text", t.group(1).strip())
+				continue
+
+			break
+
+
+class LsiController(Controller):
 	"""
 	Models a lsi controller.
 	Encapsulates the megaraid cli tools.
 	"""
+
+	def __init__(self,adapter_id=0,megacli=None):
+		Controller.__init__(self)
+		if megacli != None:
+			self._megacli = megacli
+		else:
+			self._megacli = MegaCLI()
+		
+		self._adapter_id = adapter_id
+
+		self.__read_data()
+
+
+	def __read_data(self):
+		## Read Disk Data
+		response = self._megacli.call(['-PDList',"-a{0}".format(self._adapter_id)])
+		drive = None
+		enclosure = None
+		for key,value in response:
+			if key == "Enclosure Device ID":
+				value = int(value)
+
+				if drive is not None and enclosure is not None:
+					enclosure.add_drive(drive)
+					self._enclosures[enclosure.enclosure_id] = enclosure
+					enclosure = None
+
+				if self._enclosures.has_key(value):
+					enclosure = self._enclosures[value]
+				else:
+					enclosure = Enclosure(value)
+
+				drive = Drive(enclosure)
+			
+			elif key == "Slot Number":
+				drive.slot_number = value
+				
+			elif key == "WWN":
+				drive.wwn = value
+
+			elif key == "Firmware State":
+				
+			
+			elif key == "Inquiry Data":
+				data = re.split(" +",value)
+				if data[0] == "SEAGATE":
+					drive.manufacturer = "Seagate"
+					drive.model_number = data[1]
+					drive.serial_number = data[2]
+				elif data[0][0:2] == "WD":
+					drive.manufacturer = "Western Digital"
+					drive.model_number = data[1]
+					drive.serial_number = data[0]
+			else:
+				# Some sort of catch all for non-specified attributes
+				pass
+		if drive is not None and enclosure is not None:
+			enclosure.add_drive(drive)
+			self._enclosures[enclosure.enclosure_id] = enclosure
+
+class MegaCLI:
 	_megacli_path = None
 
 	@property
@@ -167,8 +273,7 @@ class LsiController(base.Controller):
 	def megacli_path(self, value):
 		self._megacli_path = value
 
-	@staticmethod
-	def megacli(args):
+	def call(self,args):
 		"""
 		Executes MegaCLI and returns output as a string
 		:param args: A list of arguments to be passed to MegaCLI
@@ -178,54 +283,8 @@ class LsiController(base.Controller):
 		p = subprocess.Popen(args,stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 		(out,err) = p.communicate()
 		p.wait()
-		return (out,MegaCLIError(p.returncode))
+		return MegaCLIResponse(out,p.returncode)
 
-	@staticmethod
-	def parse_megacli_output(output):
-		tof = re.compile('^\r.*$\n',re.MULTILINE)
-		blank_lines = re.compile('^\n+',re.MULTILINE)
-		section_header = re.compile('^\n(.+)$\n *=+ *$\n',re.MULTILINE)
-		key_val = re.compile('^([^:\n]+):(.*)$\n',re.MULTILINE)
-		text = re.compile('^(.*)$\n',re.MULTILINE)
-
-		offset = 0
-		while offset < len(output)-1:
-			tf = re.match(tof,output[offset:-1])
-			if tf is not None:
-				print("Top")
-				offset += len(tf.group(0))
-				continue
-
-			blanks = re.match(blank_lines,output[offset:-1])
-			if blanks is not None:
-				print("<Blank Lines>")
-				offset += len(blanks.group(0))
-				continue
-
-			sh = re.match(section_header,output[offset:-1])
-			if sh is not None:
-				print("=========================%s================" % sh.group(1).strip())
-				offset += len(sh.group(0))
-				continue
-
-			kv = re.match(key_val,output[offset:-1])
-			if kv is not None:
-				k = kv.group(1).strip()
-				v = kv.group(2).strip()
-				print("%s => %s (end)" % (k,v))
-				offset += len(kv.group(0))
-				continue
-
-			t = re.match(text,output[offset:-1])
-			if t is not None:
-				print("text %s" % t.group(1))
-				offset += len(t.group(0))
-				continue
-
-			break
-
-		print("Done")
-		sys.stdout.flush()
 
 	@staticmethod
 	def discover():
