@@ -50,11 +50,11 @@ class DiskArray(object):
 
 	@property
 	def raid_level(self):
-	    return self._raid_level
+		return self._raid_level
 
 	@raid_level.setter
 	def raid_level(self, value):
-	    self._raid_level = value
+		self._raid_level = value
 
 	@property
 	def array_id(self):
@@ -143,6 +143,52 @@ class Drive(object):
 		self._serial_number = None
 		self._manufacturer = None
 		self._wwn = None
+		self._predictive_failure_count = None
+		self._other_errors = None
+		self._media_errors = None
+		self._raw_size_bytes = None
+		self._coerced_size_bytes = None
+		self._temperature_c = None
+
+	@property
+	def raw_size(self):
+		return self._raw_size_bytes
+
+	@raw_size.setter
+	def raw_size(self, value):
+		self._raw_size_bytes = value
+
+	@property
+	def coerced_size(self):
+		return self._coerced_size_bytes
+
+	@coerced_size.setter
+	def coerced_size(self, value):
+		self._coerced_size_bytes = value
+
+	@property
+	def temperature(self):
+		return self._temperature_c
+
+	@temperature.setter
+	def temperature(self, value):
+		self._temperature_c = value
+
+	@property
+	def other_errors(self):
+		return self._other_errors
+
+	@other_errors.setter
+	def other_errors(self, value):
+		self._other_errors = value
+
+	@property
+	def media_errors(self):
+		return self._media_errors
+
+	@media_errors.setter
+	def media_errors(self, value):
+		self._media_errors = value
 
 	@property
 	def slot_number(self):
@@ -215,11 +261,30 @@ class Drive(object):
 	def enclosure(self):
 		return self._enclosure
 
+	@property
+	def predictive_failure_count(self):
+		return self._predictive_failure_count
+
+	@predictive_failure_count.setter
+	def predictive_failure_count(self, value):
+		self._predictive_failure_count = value
+
 	def healthy(self):
 		"""
 		:return: True if drive is healthy, False if some sort of corrective action is required
 		"""
-		return False
+		healthy = True
+		healthy = healthy and self.media_errors == 0
+		healthy = healthy and self.other_errors == 0
+		healthy = healthy and self.predictive_failure_count == 0
+		healthy = healthy and self.status in ["Online", "Unconfigured Good", "Hot Spare"]
+		return healthy
 
 	def __str__(self):
-		return "Drive {0} {5} {1} {3}:{4} {2} Spun up? {6}".format(self.manufacturer,self.serial_number,self.status,self._enclosure.enclosure_id,self.slot_number,self.model_number,self.spunup)
+		return "Drive {0} {5} {1} {3}:{4} {2} Spun up? {6}".format(self.manufacturer,
+																	self.serial_number,
+																	"Healthy" if self.healthy() else "Unhealthy",
+																	self.enclosure.enclosure_id,
+																	self.slot_number,
+																	self.model_number,
+																	self.spunup)

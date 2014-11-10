@@ -322,7 +322,7 @@ class LsiController(Controller):
 				drive.status = data[0]
 				if data[0] == "Online":
 					"""
- 					A drive that can be accessed by the RAID controller and is part of the virtual 
+					A drive that can be accessed by the RAID controller and is part of the virtual
 					drive.
 					"""
 					pass	
@@ -376,7 +376,6 @@ class LsiController(Controller):
 				elif len(data) > 1 and data[1] == "Spun down":
 					drive.spunup = False 
 
-			
 			elif key == "Inquiry Data":
 				data = re.split(" +",value)
 				if data[0] == "SEAGATE":
@@ -387,6 +386,32 @@ class LsiController(Controller):
 					drive.manufacturer = "Western Digital"
 					drive.model_number = data[1]
 					drive.serial_number = data[0]
+			elif key == "Media Error Count":
+				value = int(value)
+				drive.media_errors = value
+			elif key == "Other Error Count":
+				value = int(value)
+				drive.other_errors = value
+			elif key == "Predictive Failure Count":
+				value = int(value)
+				pass
+			elif key == "Raw Size":
+				m = re.search("0x([0-9a-fA-F]+)",value)
+				sectors = int(m.group(1),16)
+				drive.raw_size = sectors * 512
+			elif key == "Coerced Size":
+				m = re.search("0x([0-9a-fA-F]+)",value)
+				sectors = int(m.group(1),16)
+				drive.coerced_size = sectors * 512
+			elif key == "Drive Temperature":
+				m = re.search("([0-9\.]+)C",value)
+				temperature = float(m.group(1))
+				drive.temperature = temperature
+			elif key == "Drive's position":
+				m = re.match("DiskGroup: ([0-9]+), Span: ([0-9]+), Arm: ([0-9]+)", value)
+				dg = m.group(1)
+				span = m.group(2)
+				arm = m.group(3)
 			else:
 				# Some sort of catch all for non-specified attributes
 				pass
