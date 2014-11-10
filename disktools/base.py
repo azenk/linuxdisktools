@@ -31,6 +31,12 @@ class Controller(object):
 			for drive in enclosure.drives():
 				yield drive
 
+	def create_array(self,diskarray):
+		"""
+		Creates an array on the controller.  This method should be overridden by each controller type
+		:param diskarray an instance of the DiskArray object that the controller will attempt to create
+		"""
+		pass
 
 class DiskArray(object):
 	"""
@@ -40,6 +46,15 @@ class DiskArray(object):
 	def __init__(self):
 		self._array_id = None
 		self._drives = []
+		self._raid_level = None
+
+	@property
+	def raid_level(self):
+	    return self._raid_level
+
+	@raid_level.setter
+	def raid_level(self, value):
+	    self._raid_level = value
 
 	@property
 	def array_id(self):
@@ -51,6 +66,10 @@ class DiskArray(object):
 
 	def add_drive(self, drive):
 		self._drives.append(drive)
+
+	@property
+	def drive_count(self):
+		return len(self._drives)
 
 	def drives(self):
 		for drive in self._drives:

@@ -192,6 +192,43 @@ class LsiController(Controller):
 
 		self.__read_data()
 
+	def create_array(self,diskarray):
+		if diskarray.raid_level == 10:
+			mirrors = []
+			if diskarray.drive_count % 2 != 0:
+				raise Exception("Incorrect number of drives specified")
+
+			mirror = []
+			for disk in diskarray.drives():
+				mirror.append(disk)
+				if len(mirror) == 2:
+					mirrors.append(mirror)
+					mirror = []
+
+			params = []
+			for mirror in mirrors:
+				arraynum = len(params)
+				params.append("-Array{0}[{1}:{2},{3}:{4}]".format(
+					arraynum,
+					mirror[0].enclosure.enclosure_id,mirror[0].slot_number,
+					mirror[1].enclosure.enclosure_id,mirror[1].slot_number))
+
+			ret = self._megacli.call(['-CfgSpanAdd', '-R10'] + params +
+									 ["WB","NoCachedBadBBU","-a{0}".format(self._adapter_id)])
+			if ret.is_error():
+				raise Exception("An error occurred while creating the array")
+
+		elif diskarray.raid_level in [0, 1, 5, 6]:
+			esids = map(lambda x: "{0}:{1}".format(x.enclosure.enclosure_id,x.slot_number),diskarray.drives())
+			arraystr = ",".join(esids)
+			ret = self._megacli.call(["-CfgLDAdd", "-R{0}[{1}]".format(diskarray.raid_level,arraystr),
+								"WB","NoCachedBBU","-a{0}".format(self._adapter_id)])
+
+			if ret.is_error():
+				raise Exception("An error occurred while creating the array")
+
+		else:
+			raise Exception("Specified raid level is unsupported")
 
 	def __read_data(self):
 		self.__read_enclosure_data()
