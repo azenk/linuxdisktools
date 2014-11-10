@@ -1,6 +1,6 @@
 __author__ = 'azenk'
 
-from base import Controller,Drive,Enclosure
+from base import Controller,Drive,Enclosure,DiskArray
 import subprocess
 from distutils.spawn import find_executable
 import os.path,os,sys
@@ -194,6 +194,64 @@ class LsiController(Controller):
 
 
 	def __read_data(self):
+		self.__read_enclosure_data()
+		#print(self._enclosures)
+		self.__read_disk_data()
+		self.__read_vd_data()
+
+	def __read_vd_data(self):
+		response = self._megacli.call(['-LDPDInfo',"-a{0}".format(self._adapter_id)])
+		array = None
+		enclosure_id = None
+		for key, value in response:
+			if key == "Virtual Drive":
+				if array is not None:
+					self._arrays[array.array_id] = array
+				vd_id = int(re.match("([0-9]+)",value).group(1))
+				array = DiskArray()
+				array.array_id = vd_id
+			elif key == "Enclosure Device ID":
+				enclosure_id = int(value)
+			elif key == "Slot Number":
+				slot_id = int(value)
+				array.add_drive(self._enclosures[enclosure_id]._drives[slot_id])
+		
+		self._arrays[array.array_id] = array
+
+	def __read_enclosure_data(self):
+		response = self._megacli.call(['-EncInfo',"-a{0}".format(self._adapter_id)])
+		enclosure = None
+		for key, value in response:
+			if key == "Device ID":
+				#print("Enclosure {0}".format(value))
+				if enclosure is not None:
+					self._enclosures[enclosure.enclosure_id] = enclosure
+
+				value = int(value)
+
+			
+				if self._enclosures.has_key(value):
+					enclosure = self._enclosures[value]
+				else:
+					enclosure = Enclosure(value)
+			elif key == "Number of Slots":
+				#print(int(value))
+				enclosure.slots = int(value)
+			elif key == "Partner Device ID":
+				"""
+				This is the id of a second expander on the same backplane.  
+				Drives connected to one are connected to both
+				"""
+				pass
+			elif key == "Product Identification":
+				pass
+
+		if enclosure is not None:
+			self._enclosures[enclosure.enclosure_id] = enclosure
+			
+				
+
+	def __read_disk_data(self):
 		## Read Disk Data
 		response = self._megacli.call(['-PDList',"-a{0}".format(self._adapter_id)])
 		drive = None
@@ -209,8 +267,10 @@ class LsiController(Controller):
 
 				if self._enclosures.has_key(value):
 					enclosure = self._enclosures[value]
+					#print("Found existing enclosure")
 				else:
 					enclosure = Enclosure(value)
+					#print("Creating new enclosure")
 
 				drive = Drive(enclosure)
 			
@@ -220,8 +280,65 @@ class LsiController(Controller):
 			elif key == "WWN":
 				drive.wwn = value
 
-			elif key == "Firmware State":
-				
+			elif key == "Firmware state":
+				data = re.split(" *, *",value)
+				drive.status = data[0]
+				if data[0] == "Online":
+					"""
+ 					A drive that can be accessed by the RAID controller and is part of the virtual 
+					drive.
+					"""
+					pass	
+				if data[0] == "Unconfigured Good":
+					"""
+					A drive that is functioning normally but is not configured as a part of a 
+					virtual drive or as a hot spare
+					"""
+					pass	
+				elif data[0] == "Hot Spare":
+					"""
+					A drive that is powered up and ready for use as a spare in case an online 
+					drive fails.
+					"""
+					pass	
+				elif data[0] == "Failed":
+					"""
+					A drive that was originally configured as Online or Hot Spare, but on which 
+					the firmware detects an unrecoverable error.
+					"""
+					pass	
+				elif data[0] == "Rebuild":
+					"""
+					 A drive to which data is being written to restore full redundancy for a virtual 
+					 drive.
+					"""
+					pass	
+				elif data[0] == "Unconfigured Bad":
+					"""
+					A drive on which the firmware detects an unrecoverable error; the drive was 
+					Unconfigured Good or the drive could not be initialized.
+					"""
+					pass	
+				elif data[0] == "Missing":
+					"""
+					A drive that was Online but which has been removed from its location.
+					"""
+					pass	
+				elif data[0] == "Offline":
+					"""
+					A drive that is part of a virtual drive but which has invalid data as far as the 
+					RAID configuration is concerned.
+					When a virtual drive with cached data goes offline, the cache for the virtual 
+					drive is discarded. Because the virtual drive is offline, the cache cannot be 
+					saved
+					"""
+					pass	
+
+				if len(data) > 1 and data[1] == "Spun Up":
+					drive.spunup = True
+				elif len(data) > 1 and data[1] == "Spun down":
+					drive.spunup = False 
+
 			
 			elif key == "Inquiry Data":
 				data = re.split(" +",value)
@@ -241,7 +358,8 @@ class LsiController(Controller):
 			self._enclosures[enclosure.enclosure_id] = enclosure
 
 class MegaCLI:
-	_megacli_path = None
+	def __init__(self):
+		self._megacli_path = None
 
 	@property
 	def megacli_path(self):
@@ -279,18 +397,24 @@ class MegaCLI:
 		:param args: A list of arguments to be passed to MegaCLI
 		:return: Tuple of output string and MegaCLIError Object
 		"""
-		args.insert(0,self._megacli_path)
+		args.insert(0,self.megacli_path)
 		p = subprocess.Popen(args,stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 		(out,err) = p.communicate()
 		p.wait()
 		return MegaCLIResponse(out,p.returncode)
 
 
-	@staticmethod
-	def discover():
+	def discover(self):
 		"""
 		Runs MegaCLI to find all of the LSI controllers in the system
 		:return: a list of all LSI controllers found in the system
 		"""
-		return []
+		count = 0
+		response = self.call(['-AdpCount'])
+		for key,value in response:
+			if key == "Controller Count":
+				value = re.match("([0-9]+)", value).group(1)
+				count = int(value)
+
+		return map(lambda x: LsiController(adapter_id=x,megacli=self), range(count))
 

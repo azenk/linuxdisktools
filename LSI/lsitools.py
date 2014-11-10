@@ -2,12 +2,18 @@ from disktools.lsi import MegaCLI,LsiController
 
 def main():
 	m = MegaCLI()
-	print("Using MegaCLI from {0}".format(m.megacli_path))
-	print("Getting adapter list...")
+	#print("Using MegaCLI from {0}".format(m.megacli_path))
+	#print("Getting adapter list...")
 	#out,err = m.call(['-AdpAllInfo','-aALL'])
-	lsi = LsiController(megacli=m)
-	for drive in lsi.drives():
-		print(drive)
+	for lsi in m.discover():
+		for drive in lsi.drives():
+			print(drive)
+		
+		for a in lsi.arrays():
+			print(a)
+		
+		for enclosure in lsi.enclosures():
+			print(enclosure)
 
 
 if __name__ == "__main__":
