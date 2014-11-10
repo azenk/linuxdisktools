@@ -7,13 +7,14 @@ def main():
 	#out,err = m.call(['-AdpAllInfo','-aALL'])
 	for lsi in m.discover():
 		for drive in lsi.drives():
-			print(drive)
+			if drive.healthy() < 10.0:
+				print(drive)
 		
-		for a in lsi.arrays():
-			print(a)
-		
-		for enclosure in lsi.enclosures():
-			print(enclosure)
+		#for a in lsi.arrays():
+			#print(a)
+		#
+		##for enclosure in lsi.enclosures():
+			#print(enclosure)
 
 
 if __name__ == "__main__":

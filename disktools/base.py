@@ -1,4 +1,5 @@
 __author__ = 'azenk'
+from math import log
 
 
 class Controller(object):
@@ -271,20 +272,33 @@ class Drive(object):
 
 	def healthy(self):
 		"""
-		:return: True if drive is healthy, False if some sort of corrective action is required
+		:return: A weighted drive health score
 		"""
-		healthy = True
-		healthy = healthy and (self.media_errors is None or self.media_errors == 0)
-		healthy = healthy and (self.other_errors is None or self.other_errors == 0)
-		healthy = healthy and (self.predictive_failure_count is None or self.predictive_failure_count == 0)
-		healthy = healthy and self.status in ["Online", "Unconfigured Good", "Hot Spare"]
-		return healthy
+		if self.status not in ["Online", "Unconfigured Good", "Hotspare"]:
+			if self.status in ["Unconfigured Bad", "Rebuild"]:
+				health_score = 5.0
+			else:
+				health_score = 0
+		else:
+			health_score = 10
+
+		if self.media_errors is not None: 
+			health_score += -1 * log(self.media_errors + 1)
+		if self.other_errors is not None:
+			health_score += -1 * log(self.other_errors + 1)
+		if self.predictive_failure_count is not None:
+			health_score += -10 * log(self.predictive_failure_count + 1)
+		return max(0.0,health_score)
 
 	def __str__(self):
-		return "Drive {0} {5} {1} {3}:{4} {2} Spun up? {6}".format(self.manufacturer,
+		return "Drive {0} {5} {1} {3}:{4} {2:0.2f} {7} me:{8} oe:{9} pfc:{10} Spun up? {6}".format(self.manufacturer,
 																	self.serial_number,
-																	"Healthy" if self.healthy() else "Unhealthy",
+																	self.healthy(),
 																	self.enclosure.enclosure_id,
 																	self.slot_number,
 																	self.model_number,
-																	self.spunup)
+																	self.spunup,
+																	self.status,
+																	self.media_errors,
+																	self.other_errors,
+																	self.predictive_failure_count)
