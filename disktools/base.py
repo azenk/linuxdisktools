@@ -274,9 +274,9 @@ class Drive(object):
 		:return: True if drive is healthy, False if some sort of corrective action is required
 		"""
 		healthy = True
-		healthy = healthy and self.media_errors == 0
-		healthy = healthy and self.other_errors == 0
-		healthy = healthy and self.predictive_failure_count == 0
+		healthy = healthy and (self.media_errors is None or self.media_errors == 0)
+		healthy = healthy and (self.other_errors is None or self.other_errors == 0)
+		healthy = healthy and (self.predictive_failure_count is None or self.predictive_failure_count == 0)
 		healthy = healthy and self.status in ["Online", "Unconfigured Good", "Hot Spare"]
 		return healthy
 

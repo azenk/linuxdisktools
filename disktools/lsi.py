@@ -394,7 +394,7 @@ class LsiController(Controller):
 				drive.other_errors = value
 			elif key == "Predictive Failure Count":
 				value = int(value)
-				pass
+				drive.predictive_failure_count = value
 			elif key == "Raw Size":
 				m = re.search("0x([0-9a-fA-F]+)",value)
 				sectors = int(m.group(1),16)
@@ -405,8 +405,9 @@ class LsiController(Controller):
 				drive.coerced_size = sectors * 512
 			elif key == "Drive Temperature":
 				m = re.search("([0-9\.]+)C",value)
-				temperature = float(m.group(1))
-				drive.temperature = temperature
+				if m is not None:
+					temperature = float(m.group(1))
+					drive.temperature = temperature
 			elif key == "Drive's position":
 				m = re.match("DiskGroup: ([0-9]+), Span: ([0-9]+), Arm: ([0-9]+)", value)
 				dg = m.group(1)
