@@ -7,7 +7,7 @@ def main():
 	#out,err = m.call(['-AdpAllInfo','-aALL'])
 	for lsi in m.discover():
 		for drive in lsi.drives():
-			if drive.healthy() < 10.0:
+			if drive.health < 10.0:
 				print(drive)
 		
 		#for a in lsi.arrays():

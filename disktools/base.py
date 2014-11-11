@@ -270,7 +270,8 @@ class Drive(object):
 	def predictive_failure_count(self, value):
 		self._predictive_failure_count = value
 
-	def healthy(self):
+	@property
+	def health(self):
 		"""
 		:return: A weighted drive health score
 		"""
@@ -291,14 +292,7 @@ class Drive(object):
 		return max(0.0,health_score)
 
 	def __str__(self):
-		return "Drive {0} {5} {1} {3}:{4} {2:0.2f} {7} me:{8} oe:{9} pfc:{10} Spun up? {6}".format(self.manufacturer,
-																	self.serial_number,
-																	self.healthy(),
-																	self.enclosure.enclosure_id,
-																	self.slot_number,
-																	self.model_number,
-																	self.spunup,
-																	self.status,
-																	self.media_errors,
-																	self.other_errors,
-																	self.predictive_failure_count)
+		return ("Drive {drive.serial_number} {drive.model_number} {drive.serial_number} " +
+					 "{drive.enclosure.enclosure_id}:{drive.slot_number} " +
+					 "{drive.health:0.2f} {7} me:{drive.media_errors} oe:{drive.other_errors} pfc:{drive.predictive_failure_count} " +
+						"Spun up? {drive.spunup}").format(drive=self)
