@@ -277,22 +277,22 @@ class Drive(object):
 		"""
 		if self.status not in ["Online", "Unconfigured Good", "Hotspare"]:
 			if self.status in ["Unconfigured Bad", "Rebuild"]:
-				health_score = 5.0
+				health_score = 50.0
 			else:
 				health_score = 0
 		else:
-			health_score = 10
+			health_score = 100
 
 		if self.media_errors is not None: 
-			health_score += -1 * log(self.media_errors + 1)
+			health_score += -15 * log(self.media_errors + 1)
 		if self.other_errors is not None:
-			health_score += -1 * log(self.other_errors + 1)
+			health_score += -15 * log(self.other_errors + 1)
 		if self.predictive_failure_count is not None:
-			health_score += -10 * log(self.predictive_failure_count + 1)
+			health_score += -60 * log(self.predictive_failure_count + 1)
 		return max(0.0,health_score)
 
 	def __str__(self):
-		return ("Drive {drive.serial_number} {drive.model_number} {drive.serial_number} " +
-					 "{drive.enclosure.enclosure_id}:{drive.slot_number} " +
-					 "{drive.health:0.2f} {7} me:{drive.media_errors} oe:{drive.other_errors} pfc:{drive.predictive_failure_count} " +
+		return ("Drive {drive.manufacturer} {drive.model_number} {drive.serial_number} " +
+					 "{drive.enclosure.enclosure_id: >3}:{drive.slot_number: <3} " +
+					 "{drive.health: >05.2f} {drive.status:10} me:{drive.media_errors:4} oe:{drive.other_errors:4} pfc:{drive.predictive_failure_count:4} " +
 						"Spun up? {drive.spunup}").format(drive=self)
