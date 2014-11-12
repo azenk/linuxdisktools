@@ -276,8 +276,8 @@ class Drive(object):
 		"""
 		:return: A weighted drive health score
 		"""
-		if self.status not in ["Online", "Unconfigured Good", "Hotspare"]:
-			if self.status in ["Unconfigured Bad", "Rebuild"]:
+		if self.status not in ["Online", "Unconfigured(good)", "Hotspare"]:
+			if self.status in ["Unconfigured(bad)", "Rebuild"]:
 				health_score = 50.0
 			else:
 				health_score = 0
