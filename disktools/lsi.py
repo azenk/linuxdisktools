@@ -253,7 +253,8 @@ class LsiController(Controller):
 				slot_id = int(value)
 				array.add_drive(self._enclosures[enclosure_id]._drives[slot_id])
 		
-		self._arrays[array.array_id] = array
+		if array is not None:
+			self._arrays[array.array_id] = array
 
 	def __read_enclosure_data(self):
 		response = self._megacli.call(['-EncInfo',"-a{0}".format(self._adapter_id)])
