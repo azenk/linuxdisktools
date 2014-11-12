@@ -143,6 +143,7 @@ class Drive(object):
 		pass
 		self._serial_number = None
 		self._manufacturer = None
+		self._model_number = None
 		self._wwn = None
 		self._predictive_failure_count = None
 		self._other_errors = None
@@ -285,8 +286,9 @@ class Drive(object):
 
 		if self.media_errors is not None: 
 			health_score += -15 * log(self.media_errors + 1)
-		if self.other_errors is not None:
-			health_score += -15 * log(self.other_errors + 1)
+		#if self.other_errors is not None:
+			# Supposedly these errors are not disk related
+			#health_score += -15 * log(self.other_errors + 1)
 		if self.predictive_failure_count is not None:
 			health_score += -60 * log(self.predictive_failure_count + 1)
 		return max(0.0,health_score)
