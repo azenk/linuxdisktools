@@ -379,6 +379,7 @@ class LsiController(Controller):
 
 			elif key == "Inquiry Data":
 				seagate = re.compile("SEAGATE +([A-Za-z0-9]+) +([A-Za-z0-9]+)")
+				seagatenas = re.compile("([A-Za-z0-9]+)(ST[A-Za-z0-9\-]+) +([A-Za-z0-9]+)")
 				seagatesun = re.compile("SEAGATE +([A-Za-z0-9]+\.[0-9]T)([A-Za-z0-9]+)")
 				western_digital = re.compile("(WD-[^ ]+) +([^ ]+)")
 				m = re.match(seagate,value)
@@ -398,6 +399,12 @@ class LsiController(Controller):
 					drive.manufacturer = "Seagate"
 					drive.model_number = m.group(1)
 					drive.serial_number = m.group(2)
+
+				m = re.match(seagatenas,value)
+				if m is not None:
+					drive.manufacturer = "Seagate"
+					drive.model_number = m.group(2)
+					drive.serial_number = m.group(1)
 
 			elif key == "Media Error Count":
 				value = int(value)
