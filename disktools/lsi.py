@@ -377,15 +377,27 @@ class LsiController(Controller):
 					drive.spunup = False 
 
 			elif key == "Inquiry Data":
-				data = re.split(" +",value)
-				if data[0] == "SEAGATE":
+				seagate = re.compile("SEAGATE +([A-Za-z0-9]+) +([A-Za-z0-9]+)")
+				seagatesun = re.compile("SEAGATE +([A-Za-z0-9]+\.[0-9]T)([A-Za-z0-9]+)")
+				western_digital = re.compile("(WD-[^ ]+) +([^ ]+)")
+				m = re.match(seagate,value)
+				if m is not None:
 					drive.manufacturer = "Seagate"
-					drive.model_number = data[1]
-					drive.serial_number = data[2]
-				elif data[0][0:2] == "WD":
+					drive.model_number = m.group(1)
+					drive.serial_number = m.group(2)
+
+				m = re.match(western_digital,value)
+				if m is not None:
 					drive.manufacturer = "Western Digital"
-					drive.model_number = data[1]
-					drive.serial_number = data[0]
+					drive.model_number = m.group(2)
+					drive.serial_number = m.group(1)
+
+				m = re.match(seagatesun,value)
+				if m is not None:
+					drive.manufacturer = "Seagate"
+					drive.model_number = m.group(1)
+					drive.serial_number = m.group(2)
+
 			elif key == "Media Error Count":
 				value = int(value)
 				drive.media_errors = value
