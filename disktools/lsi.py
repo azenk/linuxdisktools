@@ -222,10 +222,10 @@ class LsiController(Controller):
 			esids = map(lambda x: "{0}:{1}".format(x.enclosure.enclosure_id,x.slot_number),diskarray.drives())
 			arraystr = ",".join(esids)
 			ret = self._megacli.call(["-CfgLDAdd", "-R{0}[{1}]".format(diskarray.raid_level,arraystr),
-								"WB","NoCachedBBU","-a{0}".format(self._adapter_id)])
+								"WB","NoCachedBadBBU","-a{0}".format(self._adapter_id)])
 
 			if ret.is_error():
-				raise Exception("An error occurred while creating the array")
+				raise Exception("An error occurred while creating the array:{0}".format(ret.get_error_string()))
 
 		else:
 			raise Exception("Specified raid level is unsupported")
