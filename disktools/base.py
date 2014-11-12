@@ -140,7 +140,6 @@ class Drive(object):
 
 	def __init__(self,enclosure=None):
 		self._enclosure = enclosure
-		pass
 		self._serial_number = None
 		self._manufacturer = None
 		self._model_number = None
@@ -295,6 +294,7 @@ class Drive(object):
 
 	def __str__(self):
 		return ("Drive {drive.manufacturer} {drive.model_number} {drive.serial_number} " +
-					 "{drive.enclosure.enclosure_id: >3}:{drive.slot_number: <3} " +
-					 "{drive.health: >05.2f} {drive.status:10} me:{drive.media_errors:4} oe:{drive.other_errors:4} pfc:{drive.predictive_failure_count:4} " +
+					  "{drive.enclosure.enclosure_id: >3}:{drive.slot_number: <3} " +
+					  "{drive.health: >05.2f} {drive.status:10} {drive.raw_size: >05.3f}" +
+						"me:{drive.media_errors:4} oe:{drive.other_errors:4} pfc:{drive.predictive_failure_count:4} " +
 						"Spun up? {drive.spunup}").format(drive=self)
