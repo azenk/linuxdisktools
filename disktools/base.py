@@ -301,6 +301,6 @@ class Drive(object):
     def __str__(self):
         return ("Drive {drive.manufacturer} {drive.model_number} {drive.serial_number} " +
                       "{drive.enclosure.enclosure_id: >3}:{drive.slot_number: <3} " +
-                      "{drive.health: >05.2f} {drive.status:10} {drive.raw_size: >012d}" +
+                      "{drive.health: >05.2f} {drive.status:10} {drive.raw_size: >012d} " +
                         "me:{drive.media_errors:4} oe:{drive.other_errors:4} pfc:{drive.predictive_failure_count:4} " +
                         "Spun up? {drive.spunup}").format(drive=self)
