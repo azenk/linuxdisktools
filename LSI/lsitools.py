@@ -7,11 +7,11 @@ import sys
 
 def main():
     p = ArgumentParser()
-    p.add_argument('mode', nargs=0, choices=['drives','buildarrays'])
-    p.add_argument('--raid-level', '-r', dest="raid_level", nargs=1, type=int, choices=[0, 1, 5, 6, 10, 50, 60], default=6)
-    p.add_argument('--drives-per-array','-c', dest="target_drive_count", nargs=1, type=int, default=None,
+    p.add_argument('mode', choices=['drives','buildarrays'])
+    p.add_argument('--raid-level', '-r', dest="raid_level", type=int, choices=[0, 1, 5, 6, 10, 50, 60], default=6)
+    p.add_argument('--drives-per-array','-c', dest="target_drive_count", type=int, default=None,
                    help="The target number of drives to include in each array")
-    p.add_argument('--hotspares-per-array','-h', dest="hotspares_per_array", nargs=1, type=int, default=1,
+    p.add_argument('--hotspares-per-array','-h', dest="hotspares_per_array", type=int, default=1,
                    help="The number of hotspares that should be allocated per array that is built, all are global")
     args = p.parse_args()
 
