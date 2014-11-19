@@ -231,7 +231,7 @@ class LsiController(Controller):
             raise Exception("Specified raid level is unsupported")
 
     def create_global_hotspare(self,drive):
-        ret = self._megacli.call(["-PDHSP",
+        ret = self._megacli.call(["-PDHSP", "-Set",
                             "-PhysDrv[{drive.enclosure.enclosure_id}:{drive.slot_number}]".format(drive=drive),
                             "-a{0}".format(self._adapter_id)])
         if ret.is_error():
