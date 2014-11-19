@@ -13,6 +13,8 @@ def main():
                    help="The target number of drives to include in each array")
     p.add_argument('--hotspares-per-array','-s', dest="hotspares_per_array", type=int, default=1,
                    help="The number of hotspares that should be allocated per array that is built, all are global")
+    p.add_argument('--bad-only', '-b', action='store_true', dest='bad_only', default=False,
+                   help="Only display devices with health issues")
     args = p.parse_args()
 
     m = MegaCLI()
@@ -23,7 +25,9 @@ def main():
         # out,err = m.call(['-AdpAllInfo','-aALL'])
         for lsi in m.discover():
             for drive in lsi.drives():
-                if drive.health < 100.0:
+                if args.bad_only and drive.health < 100.0:
+                    print(drive)
+                else:
                     print(drive)
 
                 # for a in lsi.arrays():
