@@ -16,7 +16,7 @@ def main():
     args = p.parse_args()
 
     m = MegaCLI()
-    if args["mode"] == "drives":
+    if args.mode == "drives":
         m = MegaCLI()
         # print("Using MegaCLI from {0}".format(m.megacli_path))
         # print("Getting adapter list...")
@@ -31,10 +31,10 @@ def main():
                 #
                 # for enclosure in lsi.enclosures():
                 # print(enclosure)
-    elif args["mode"] == "buildarrays":
-        array_n = args["target_drive_count"]
-        raid_lvl = args["raid_level"]
-        hotspare_n = args["hotspares_per_array"]
+    elif args.mode == "buildarrays":
+        array_n = args.target_drive_count
+        raid_lvl = args.raid_level
+        hotspare_n = args.hotspares_per_array
         m = MegaCLI()
         for lsi in m.discover():
             for enclosure in lsi.enclosures():
