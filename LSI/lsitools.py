@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 from disktools.lsi import MegaCLI, LsiController
 from disktools.base import DiskArray
 from argparse import ArgumentParser
