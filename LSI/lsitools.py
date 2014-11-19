@@ -7,7 +7,7 @@ import sys
 
 def main():
     p = ArgumentParser()
-    p.add_argument('mode', nargs=0, choices=['drives','buildarrays'], required=True)
+    p.add_argument('mode', nargs=0, choices=['drives','buildarrays'])
     p.add_argument('--raid-level', '-r', dest="raid_level", nargs=1, type=int, choices=[0, 1, 5, 6, 10, 50, 60], default=6)
     p.add_argument('--drives-per-array','-c', dest="target_drive_count", nargs=1, type=int, default=None,
                    help="The target number of drives to include in each array")
