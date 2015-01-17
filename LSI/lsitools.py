@@ -4,10 +4,16 @@ from disktools.lsi import MegaCLI, LsiController
 from disktools.base import DiskArray
 from argparse import ArgumentParser
 import sys
+import logging
+
+from gelfHandler import gelfHandler
 
 def main():
     p = ArgumentParser()
     p.add_argument('mode', choices=['drives','buildarrays'])
+    p.add_argument('--graylog-host', '-g', dest="graylog_host", default=None)
+    p.add_argument('--graylog-port', dest="graylog_port", type=int, default=12201)
+    p.add_argument('--graylog-proto', dest="graylog_proto", choices=["TCP","UDP"], default="TCP")
     p.add_argument('--raid-level', '-r', dest="raid_level", type=int, choices=[0, 1, 5, 6, 10, 50, 60], default=6)
     p.add_argument('--drives-per-array','-c', dest="target_drive_count", type=int, default=None,
                    help="The target number of drives to include in each array")
@@ -17,6 +23,25 @@ def main():
                    help="Only display devices with health issues")
     args = p.parse_args()
 
+    logger = logging.getLogger('lsitools')
+    logger.setLevel(logging.DEBUG)
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.DEBUG)
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s -%(gelfProps)s')
+    ch.setFormatter(formatter)
+    logger.addHandler(ch)
+
+    if args.graylog_host != None:
+	try:
+            gHandler = gelfHandler(host=args.graylog_host,port=args.graylog_port,proto=args.graylog_proto)
+            gHandler.setLevel(logging.DEBUG)
+	    logger.addHandler(gHandler)
+            logger.debug("Graylog handler added successfully", extra={"gelfProps": dict()})
+	except Exception, e:
+	    logger.warn("Unable to setup gelf logging %s" % e, extra={"gelfProps": dict()})
+
+    logger.debug("Application started, logging configured.", extra={"gelfProps": dict()})
+
     m = MegaCLI()
     if args.mode == "drives":
         m = MegaCLI()
@@ -25,10 +50,20 @@ def main():
         # out,err = m.call(['-AdpAllInfo','-aALL'])
         for lsi in m.discover():
             for drive in lsi.drives():
-                if args.bad_only and drive.health < 100.0:
-                    print(drive)
-                else:
-                    print(drive)
+                props = dict()
+                props["_drive_health"] = drive.health
+                props["_drive_serial"] = drive.serial_number
+                props["_drive_model"] = drive.model_number
+                props["_drive_manufacturer"] = drive.manufacturer 
+                props["_drive_raw_size"] = drive.raw_size
+                props["_drive_status"] = drive.status
+                props["_drive_media_errors"] = drive.media_errors
+                props["_drive_other_errors"] = drive.other_errors
+                props["_drive_predictive_failure_count"] = drive.predictive_failure_count
+                if drive.health < 100.0:
+                    logger.error("Failing drive", extra={ "gelfProps": props})
+                elif not args.bad_only:
+                    logger.info("Normal drive",extra={"gelfProps":props})
 
                 # for a in lsi.arrays():
                 # print(a)
