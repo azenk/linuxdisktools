@@ -51,6 +51,8 @@ def main():
         for lsi in m.discover():
             for drive in lsi.drives():
                 props = dict()
+                props["_drive_enclosure"] = drive.enclosure
+                props["_drive_slot"] = drive.slot_number
                 props["_drive_health"] = drive.health
                 props["_drive_serial"] = drive.serial_number
                 props["_drive_model"] = drive.model_number
