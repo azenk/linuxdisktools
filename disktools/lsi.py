@@ -304,7 +304,10 @@ class LsiController(Controller):
         enclosure = None
         for key,value in response:
             if key == "Enclosure Device ID":
-                value = int(value)
+                try:
+                    value = int(value)
+                except:
+                    value = -1
 
                 if drive is not None and enclosure is not None:
                     enclosure.add_drive(drive)
