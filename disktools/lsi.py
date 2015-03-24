@@ -389,6 +389,7 @@ class LsiController(Controller):
                 seagate = re.compile("SEAGATE +([A-Za-z0-9]+) +([A-Za-z0-9]+)")
                 seagatenas = re.compile("([A-Za-z0-9]+)(ST[A-Za-z0-9\-]+) +([A-Za-z0-9]+)")
                 seagatesun = re.compile("SEAGATE +([A-Za-z0-9]+\.[0-9]T)([A-Za-z0-9]+)")
+                hitachi = re.compile("([A-Za-z0-9]+) +(HGST [A-Za-z0-9\-]+) +([A-Za-z0-9]+)")
                 western_digital = re.compile("(WD-[^ ]+) +([^ ]+)")
                 m = re.match(seagate,value)
                 if m is not None:
@@ -399,6 +400,12 @@ class LsiController(Controller):
                 m = re.match(western_digital,value)
                 if m is not None:
                     drive.manufacturer = "Western Digital"
+                    drive.model_number = m.group(2)
+                    drive.serial_number = m.group(1)
+
+                m = re.match(hitachi,value)
+                if m is not None:
+                    drive.manufacturer = "Hitachi"
                     drive.model_number = m.group(2)
                     drive.serial_number = m.group(1)
 
