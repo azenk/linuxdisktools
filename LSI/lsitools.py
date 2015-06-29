@@ -59,6 +59,7 @@ def main():
                 props["_drive_manufacturer"] = drive.manufacturer 
                 props["_drive_raw_size"] = drive.raw_size
                 props["_drive_status"] = drive.status
+                props["_drive_temperature"] = drive.temperature
                 props["_drive_media_errors"] = drive.media_errors
                 props["_drive_other_errors"] = drive.other_errors
                 props["_drive_predictive_failure_count"] = drive.predictive_failure_count
