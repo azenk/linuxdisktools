@@ -8,16 +8,17 @@ import logging
 
 from gelfHandler import gelfHandler
 
+
 def main():
     p = ArgumentParser()
-    p.add_argument('mode', choices=['drives','buildarrays'])
+    p.add_argument('mode', choices=['drives', 'buildarrays'])
     p.add_argument('--graylog-host', '-g', dest="graylog_host", default=None)
     p.add_argument('--graylog-port', dest="graylog_port", type=int, default=12201)
-    p.add_argument('--graylog-proto', dest="graylog_proto", choices=["TCP","UDP"], default="TCP")
+    p.add_argument('--graylog-proto', dest="graylog_proto", choices=["TCP", "UDP"], default="TCP")
     p.add_argument('--raid-level', '-r', dest="raid_level", type=int, choices=[0, 1, 5, 6, 10, 50, 60], default=6)
-    p.add_argument('--drives-per-array','-c', dest="target_drive_count", type=int, default=None,
+    p.add_argument('--drives-per-array', '-c', dest="target_drive_count", type=int, default=None,
                    help="The target number of drives to include in each array")
-    p.add_argument('--hotspares-per-array','-s', dest="hotspares_per_array", type=int, default=1,
+    p.add_argument('--hotspares-per-array', '-s', dest="hotspares_per_array", type=int, default=1,
                    help="The number of hotspares that should be allocated per array that is built, all are global")
     p.add_argument('--bad-only', '-b', action='store_true', dest='bad_only', default=False,
                    help="Only display devices with health issues")
@@ -31,14 +32,14 @@ def main():
     ch.setFormatter(formatter)
     logger.addHandler(ch)
 
-    if args.graylog_host != None:
-    try:
-        gHandler = gelfHandler(host=args.graylog_host,port=args.graylog_port,proto=args.graylog_proto)
-        gHandler.setLevel(logging.DEBUG)
-        logger.addHandler(gHandler)
-        logger.debug("Graylog handler added successfully", extra={"gelfProps": dict()})
-    except Exception, e:
-        logger.warn("Unable to setup gelf logging %s" % e, extra={"gelfProps": dict()})
+    if args.graylog_host is not None:
+        try:
+            gHandler = gelfHandler(host=args.graylog_host, port=args.graylog_port, proto=args.graylog_proto)
+            gHandler.setLevel(logging.DEBUG)
+            logger.addHandler(gHandler)
+            logger.debug("Graylog handler added successfully", extra={"gelfProps": dict()})
+        except Exception, e:
+            logger.warn("Unable to setup gelf logging %s" % e, extra={"gelfProps": dict()})
 
     logger.debug("Application started, logging configured.", extra={"gelfProps": dict()})
 
@@ -56,7 +57,7 @@ def main():
                 props["_drive_health"] = drive.health
                 props["_drive_serial"] = drive.serial_number
                 props["_drive_model"] = drive.model_number
-                props["_drive_manufacturer"] = drive.manufacturer 
+                props["_drive_manufacturer"] = drive.manufacturer
                 props["_drive_raw_size"] = drive.raw_size
                 props["_drive_status"] = drive.status
                 props["_drive_temperature"] = drive.temperature
@@ -66,13 +67,13 @@ def main():
                 if drive.health < 100.0:
                     logger.error("Failing drive", extra={"gelfProps": props})
                 elif not args.bad_only:
-                    logger.info("Normal drive",extra={"gelfProps": props})
+                    logger.info("Normal drive", extra={"gelfProps": props})
 
-                # for a in lsi.arrays():
-                # print(a)
-                #
-                # for enclosure in lsi.enclosures():
-                # print(enclosure)
+                    # for a in lsi.arrays():
+                    # print(a)
+                    #
+                    # for enclosure in lsi.enclosures():
+                    # print(enclosure)
     elif args.mode == "buildarrays":
         array_n = args.target_drive_count
         raid_lvl = args.raid_level
@@ -105,8 +106,6 @@ def main():
 
                 if a.drive_count > 0:
                     lsi.create_array(a)
-
-
 
 
 if __name__ == "__main__":
