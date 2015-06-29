@@ -32,13 +32,13 @@ def main():
     logger.addHandler(ch)
 
     if args.graylog_host != None:
-	try:
-            gHandler = gelfHandler(host=args.graylog_host,port=args.graylog_port,proto=args.graylog_proto)
-            gHandler.setLevel(logging.DEBUG)
-	    logger.addHandler(gHandler)
-            logger.debug("Graylog handler added successfully", extra={"gelfProps": dict()})
-	except Exception, e:
-	    logger.warn("Unable to setup gelf logging %s" % e, extra={"gelfProps": dict()})
+    try:
+        gHandler = gelfHandler(host=args.graylog_host,port=args.graylog_port,proto=args.graylog_proto)
+        gHandler.setLevel(logging.DEBUG)
+        logger.addHandler(gHandler)
+        logger.debug("Graylog handler added successfully", extra={"gelfProps": dict()})
+    except Exception, e:
+        logger.warn("Unable to setup gelf logging %s" % e, extra={"gelfProps": dict()})
 
     logger.debug("Application started, logging configured.", extra={"gelfProps": dict()})
 
@@ -63,9 +63,9 @@ def main():
                 props["_drive_other_errors"] = drive.other_errors
                 props["_drive_predictive_failure_count"] = drive.predictive_failure_count
                 if drive.health < 100.0:
-                    logger.error("Failing drive", extra={ "gelfProps": props})
+                    logger.error("Failing drive", extra={"gelfProps": props})
                 elif not args.bad_only:
-                    logger.info("Normal drive",extra={"gelfProps":props})
+                    logger.info("Normal drive",extra={"gelfProps": props})
 
                 # for a in lsi.arrays():
                 # print(a)
