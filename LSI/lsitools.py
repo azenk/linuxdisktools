@@ -43,6 +43,8 @@ def main():
 
     logger.debug("Application started, logging configured.", extra={"gelfProps": dict()})
 
+    exit_code=0
+
     m = MegaCLI()
     if args.mode == "drives":
         m = MegaCLI()
@@ -66,6 +68,7 @@ def main():
                 props["_drive_predictive_failure_count"] = drive.predictive_failure_count
                 if drive.health < 100.0:
                     logger.error("Failing drive", extra={"gelfProps": props})
+                    exit_code=2
                 elif not args.bad_only:
                     logger.info("Normal drive", extra={"gelfProps": props})
 
@@ -106,6 +109,7 @@ def main():
 
                 if a.drive_count > 0:
                     lsi.create_array(a)
+    sys.exit(exit_code)
 
 
 if __name__ == "__main__":
