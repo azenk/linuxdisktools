@@ -22,13 +22,18 @@ def main():
                    help="The number of hotspares that should be allocated per array that is built, all are global")
     p.add_argument('--bad-only', '-b', action='store_true', dest='bad_only', default=False,
                    help="Only display devices with health issues")
+    p.add_argument('--verbose-format', '-v', action='store_true', dest='verbose_format', default=False,
+                   help="Log using a verbose string instead of terse graylog compatible json")
     args = p.parse_args()
 
     logger = logging.getLogger('lsitools')
     logger.setLevel(logging.DEBUG)
     ch = logging.StreamHandler()
     ch.setLevel(logging.DEBUG)
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s -%(gelfProps)s')
+    if args.verbose_format:
+        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    else:
+        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s -%(gelfProps)s')
     ch.setFormatter(formatter)
     logger.addHandler(ch)
 
@@ -67,10 +72,16 @@ def main():
                 props["_drive_other_errors"] = drive.other_errors
                 props["_drive_predictive_failure_count"] = drive.predictive_failure_count
                 if drive.health < 100.0:
-                    logger.error("Failing drive", extra={"gelfProps": props})
+                    if args.verbose_format:
+                        logger.error("e{_drive_enclosure:0>3}s{_drive_slot:0>2} {_drive_status} {_drive_manufacturer} {_drive_model} {_drive_serial} health:{_drive_health: 3.0f}, pf:{_drive_predictive_failure_count}, md err:{_drive_media_errors}, other:{_drive_other_errors}, temp:{_drive_temperature}C".format(**props), extra={"gelfProps": props})
+                    else:
+                        logger.error("Failing drive", extra={"gelfProps": props})
                     exit_code=2
                 elif not args.bad_only:
-                    logger.info("Normal drive", extra={"gelfProps": props})
+                    if args.verbose_format:
+                        logger.error("e{_drive_enclosure:0>3}s{_drive_slot:0>2} {_drive_status} {_drive_manufacturer} {_drive_model} {_drive_serial} health:{_drive_health: 3.0f}, pf:{_drive_predictive_failure_count}, md err:{_drive_media_errors}, other:{_drive_other_errors}, temp:{_drive_temperature}C".format(**props), extra={"gelfProps": props})
+                    else:
+                        logger.info("Normal drive", extra={"gelfProps": props})
 
                     # for a in lsi.arrays():
                     # print(a)
